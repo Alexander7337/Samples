@@ -1,0 +1,38 @@
+/// <summary>
+		/// Generic method to return Client request model
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="reader"></param>
+		/// <returns></returns>
+		public static T GetModelFromDb<T>(this DB2DataReader reader) where T : class
+		{
+			if (typeof(T) == typeof(GetListingProductionReportResponseContracts))
+			{
+				return ToListingProduction<T>(reader);
+			}
+			else if(typeof(T) == typeof(GetListingProlongedReserveReportResponseContracts))
+			{
+				return ToListingProlongedReserve<T>(reader);
+			}
+			else if (typeof(T) == typeof(GetListingReserveReportResponseContracts))
+			{
+				return  ToListingReserve<T>(reader);
+			}
+			else if (typeof(T) == typeof(GetNonLifeProductionReportResponseContracts))
+			{
+				return ToNonLifeProduction<T>(reader);
+			}
+            else if (typeof(T) == typeof(CreateFsmaReportResponseBrokers))
+            {
+                return ToBrokers<T>(reader);
+            }
+            else if (typeof(T) == typeof(Customer))
+            {
+                return ToCustomer<T>(reader);
+            }
+            else
+			{
+				return null;
+			}
+
+		}
