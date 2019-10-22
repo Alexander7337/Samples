@@ -1,0 +1,24 @@
+/// <summary>
+		/// Groups object by month or year depending on CustomType
+		/// </summary>
+		/// <typeparam name="CustomType"></typeparam>
+		/// <param name="dataToGroup"></param>
+		/// <returns></returns>
+		public static CustomType SampleMethod<CustomType>(object dataToGroup)
+		{
+			object groupedModel = default(CustomType);
+
+			if (typeof(CustomType) == typeof(List<IGrouping<int, GetIardInOutReportResponseInOut>>))
+			{
+				var getIardInOutReportResponseInOuts = dataToGroup as GetIardInOutReportResponseInOut[];
+				groupedModel = getIardInOutReportResponseInOuts.GroupBy(i => i.Month).OrderBy(e => e.Key).ToList();
+			}
+			else if (typeof(CustomType) == typeof(List<IGrouping<int, GroupModel>>))
+			{
+				var listGroupModels = dataToGroup as List<GroupModel>;
+				groupedModel = listGroupModels.GroupBy(y => y.Year).OrderBy(e => e.Key).ToList();
+			}
+			var result = (CustomType)groupedModel;
+
+			return result;
+		}
