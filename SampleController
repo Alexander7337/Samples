@@ -1,0 +1,90 @@
+    /// <summary>
+		/// Sample Controller
+		/// </summary>
+		/// <param name="model"></param>
+		/// <returns>JSON Model with the extracted from MRZ user information</returns>
+		[HttpPost]
+		[Route("SampleData")]
+		[SwaggerOperation(Tags = new[] { Swagger.Application })]
+		public IHttpActionResult SampleData([FromBody] StoreImageResponseModel model)
+		{
+			logger.Info($"Start {MethodBase.GetCurrentMethod().Name}");
+
+			var context = HttpContext.Current;
+			var imageUploadPath = IdentityCardWS.AprConfig.IdentityCardWS.Settings.ImageUploadPath;
+
+
+			if (model != null && ModelState.IsValid)
+			{
+				string fullNameFromKeyId = model.ToString();
+				string localFileName = model.Guid + Path.GetExtension(model.FileName);
+				MrzDataModel retrievedUserData = null;
+
+				try
+				{
+					var destinationPath = ExtractDataService.GetFullPath(imageUploadPath, localFileName);
+					//ExtractDataService.GetObjectFromS3(keyId, secretKey, bucketName, regionEndpoint, fullNameFromKeyId, destinationPath);
+
+					var processResponse = ExtractDataService.ProcessFile(process, destinationPath, detectMrzFile);
+
+					//In case an error is detected, return 500 Internal server error
+					if (!string.IsNullOrEmpty(processResponse.error))
+					{
+
+						logger.Error($"Command execution failed with following details {processResponse.error}");
+						return InternalServerError(new TypeUnloadedException(Settings.Default.InternalServerErrorMsg));
+					}
+
+					//If no error is detected in the execution process, try to parse the result
+					retrievedUserData = ExtractDataAdapter.RetrieveData(processResponse.output);
+
+					if (retrievedUserData.IsNull())
+					{
+						logger.Warn($"Python script returned empty object {processResponse.output}");
+						return BadRequest(Settings.Default.BadRequestNoSuitableFile);
+					}
+
+					return Ok(retrievedUserData);
+				}
+				catch (ArgumentNullException ex)
+				{
+					logger.Error($"Extracting user data failed with an argument null exception. {ex.InnerException}");
+					return InternalServerError(new Exception(Settings.Default.InternalServerErrorMsg));
+				}
+				catch (InvalidOperationException ex)
+				{
+					logger.Error($"Extract data service threw an invalid operation exception. {ex.InnerException}");
+					return InternalServerError(new Exception(Settings.Default.InternalServerErrorMsg));
+				}
+				catch (NullReferenceException ex)
+				{
+					logger.Error($"Extract data service threw a null reference exception. {ex.InnerException}");
+					return InternalServerError(new Exception(Settings.Default.InternalServerErrorMsg));
+				}
+				catch (Newtonsoft.Json.JsonReaderException ex)
+				{
+					logger.Warn($"Extracting user data failed while extracting userdata from python json result: {ex.ToString()}");
+					return BadRequest(Settings.Default.BadRequestNoSuitableFile);
+				}
+				catch (Exception ex)
+				{
+					//If there are errors this indicates issues while trying to read from the image.
+					//We need to suggest uploading new one.
+					logger.Error($"Extracting user data failed with following details {ex.InnerException}");
+					return InternalServerError(new Exception(Settings.Default.InternalServerErrorMsg));
+				}
+				finally
+				{
+					ExtractDataService.DeleteFromFolder(imageUploadPath, localFileName);
+
+					//Remove image from S3 if Data was returned
+					if (retrievedUserData == null)
+					{
+						StoreDataService.DeleteFile(keyId, secretKey, bucketName, regionEndpoint, fullNameFromKeyId);
+					}
+				}
+			}
+
+			logger.Error($"No file was passed in the request");
+			return BadRequest(Settings.Default.BadRequestNullModel);
+		}
