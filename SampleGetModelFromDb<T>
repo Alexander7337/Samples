@@ -1,10 +1,10 @@
-/// <summary>
+		/// <summary>
 		/// Generic method to return Client request model
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		/// <param name="reader"></param>
 		/// <returns></returns>
-		public static T GetModelFromDb<T>(this DB2DataReader reader) where T : class
+		public static T SampleGetModelFromDb<T>(this DB2DataReader reader) where T : class
 		{
 			if (typeof(T) == typeof(GetListingProductionReportResponseContracts))
 			{
