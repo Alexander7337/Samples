@@ -1,0 +1,48 @@
+    /// <summary>
+		/// SampleViewModel...
+		/// </summary>
+		/// <typeparam name="GenericLineChartType"></typeparam>
+		/// <param name="groupedResItems"></param>
+		/// <returns></returns>
+		public static SampleViewModel<SampleType> GetNormalizedProductionViewModel<SampleType>(
+			IOrderedEnumerable<IGrouping<int, GetLifeProductReportResponseRegularPremium>> groupedResItems) where SampleType : class
+		{
+			NormalizedProductionViewModel<SampleType> model = new NormalizedProductionViewModel<SampleType>();
+
+			if (typeof(SampleType) == typeof(LineChartModel))
+			{
+				foreach (var groupItem in groupedResItems)
+				{
+					LineChartModel lineModel = new LineChartModel();
+					lineModel.Year = groupItem.Key;
+					foreach (var groupProperty in groupItem)
+					{
+						LifePremiumsModel lifePremiumsModel = new LifePremiumsModel();
+						lifePremiumsModel = lifePremiumsModel.GetLifePremiumsModel(groupProperty);
+						lineModel.DataItems.Add(lifePremiumsModel);
+					}
+
+					model.Items.Add(lineModel as GenericLineChartType);
+				}
+				
+				return model;
+			}
+			else
+			{
+				foreach (var groupItem in groupedResItems)
+				{
+					MonthlyLineChartModel montlyLineModel = new MonthlyLineChartModel();
+					montlyLineModel.MonthField = groupItem.Key;
+					foreach (var groupProperty in groupItem)
+					{
+						LifePremiumsModel lifePremiumsModel = new LifePremiumsModel();
+						lifePremiumsModel = lifePremiumsModel.GetLifePremiumsModel(groupProperty);
+						montlyLineModel.DataItems.Add(lifePremiumsModel);
+					}
+
+					model.Items.Add(montlyLineModel as SampleType);
+				}
+				
+				return model;
+			}
+		}
